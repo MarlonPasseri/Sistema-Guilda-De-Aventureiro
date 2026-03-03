@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro da Guilda</title>
+    <style>
+        :root {
+            --bg-top: #fbf4e4;
+            --bg-mid: #f1e5ce;
+            --bg-bot: #e4d1ad;
+            --ink: #2a1f13;
+            --ink-soft: #5a4b3d;
+            --line: rgba(89, 62, 30, 0.24);
+            --gold: #b6802b;
+            --gold-soft: #ebc782;
+            --green: #276451;
+            --green-soft: #d8ece4;
+            --panel: rgba(255, 250, 240, 0.86);
+            --method-get: #1f7358;
+            --method-post: #9f6b1f;
+            --method-put: #8c4c2f;
+            --method-patch: #5e588f;
+            --method-delete: #8a2f2f;
+            --code-bg: #221b16;
+            --code-fg: #edf0e7;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            color: var(--ink);
+            font-family: "Book Antiqua", "Palatino Linotype", "Garamond", serif;
+            background:
+                radial-gradient(1000px 300px at 12% -5%, rgba(255, 224, 152, 0.5), transparent),
+                radial-gradient(900px 260px at 95% 0%, rgba(53, 125, 99, 0.2), transparent),
+                linear-gradient(160deg, var(--bg-top), var(--bg-mid) 45%, var(--bg-bot));
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.09;
+            background:
+                repeating-linear-gradient(
+                    135deg,
+                    #6e4f2f 0,
+                    #6e4f2f 1px,
+                    transparent 1px,
+                    transparent 9px
+                );
+        }
+
+        .shell {
+            width: min(1120px, calc(100% - 32px));
+            margin: 26px auto 34px;
+        }
+
+        .hero {
+            position: relative;
+            border: 1px solid var(--line);
+            border-radius: 24px;
+            background: var(--panel);
+            box-shadow: 0 22px 48px rgba(52, 35, 15, 0.13);
+            padding: clamp(18px, 4vw, 34px);
+            animation: fade-up 600ms ease-out both;
+            overflow: hidden;
+        }
+
+        .hero::after {
+            content: "";
+            position: absolute;
+            right: -84px;
+            top: -84px;
+            width: 240px;
+            height: 240px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(182, 128, 43, 0.2), transparent 70%);
+            animation: pulse 4.5s ease-in-out infinite;
+        }
+
+        .mark {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.78rem;
+            letter-spacing: 1.4px;
+            text-transform: uppercase;
+            color: #6e5a3f;
+            font-weight: 700;
+            border: 1px solid #c6a875;
+            border-radius: 999px;
+            padding: 5px 12px;
+            background: #f5e6ca;
+        }
+
+        h1 {
+            margin: 14px 0 8px;
+            font-size: clamp(1.8rem, 4vw, 3rem);
+            line-height: 1.12;
+            letter-spacing: 0.5px;
+        }
+
+        .hero p {
+            margin: 0;
+            max-width: 68ch;
+            color: var(--ink-soft);
+            font-size: clamp(0.98rem, 1.9vw, 1.14rem);
+        }
+
+        .layout {
+            margin-top: 16px;
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            gap: 14px;
+        }
+
+        .panel {
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            background: var(--panel);
+            box-shadow: 0 14px 36px rgba(52, 35, 15, 0.11);
+            backdrop-filter: blur(2px);
+            animation: fade-up 700ms ease-out both;
+        }
+
+        .panel-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            border-bottom: 1px solid rgba(95, 70, 41, 0.15);
+            padding: 14px 16px;
+        }
+
+        .panel-head h2 {
+            margin: 0;
+            font-size: 1.16rem;
+            letter-spacing: 0.3px;
+        }
+
+        .panel-body {
+            padding: 14px;
+        }
+
+        .legend {
+            color: #6a5641;
+            font-size: 0.85rem;
+        }
+
+        .endpoint-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .endpoint {
+            border: 1px solid rgba(95, 70, 41, 0.22);
+            border-radius: 14px;
+            background: linear-gradient(155deg, #fff9ee, #f7ecd7);
+            padding: 12px;
+            transition: transform 140ms ease, box-shadow 180ms ease;
+        }
+
+        .endpoint:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(43, 30, 13, 0.12);
+        }
+
+        .endpoint-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .method {
+            display: inline-block;
+            min-width: 62px;
+            text-align: center;
+            border-radius: 999px;
+            font-family: "Consolas", "Courier New", monospace;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            color: #fff;
+            padding: 4px 8px;
+        }
+
+        .get { background: var(--method-get); }
+        .post { background: var(--method-post); }
+        .put { background: var(--method-put); }
+        .patch { background: var(--method-patch); }
+        .delete { background: var(--method-delete); }
+
+        .path {
+            font-family: "Consolas", "Courier New", monospace;
+            font-size: 0.84rem;
+            color: #2f2418;
+            background: rgba(255, 255, 255, 0.55);
+            border: 1px dashed rgba(96, 71, 41, 0.35);
+            border-radius: 8px;
+            padding: 3px 8px;
+        }
+
+        .endpoint p {
+            margin: 0;
+            color: #554433;
+            font-size: 0.92rem;
+            line-height: 1.35;
+        }
+
+        .console {
+            display: grid;
+            gap: 12px;
+        }
+
+        .actions {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        button {
+            border: 1px solid #bd9253;
+            background: linear-gradient(120deg, var(--gold), var(--gold-soft));
+            color: #281d10;
+            border-radius: 11px;
+            font-weight: 700;
+            font-size: 0.88rem;
+            padding: 10px 12px;
+            cursor: pointer;
+            transition: transform 120ms ease, filter 140ms ease;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.04);
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+        }
+
+        input {
+            width: 100%;
+            border: 1px solid #b9a07a;
+            border-radius: 11px;
+            background: #fffdf8;
+            color: #2e261d;
+            padding: 10px 12px;
+            font-size: 0.94rem;
+            font-family: "Consolas", "Courier New", monospace;
+        }
+
+        .status-line {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            font-size: 0.86rem;
+            color: #5d4f3e;
+        }
+
+        .status-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border-radius: 999px;
+            padding: 4px 10px;
+            border: 1px solid #7aa690;
+            color: #1b5a43;
+            background: var(--green-soft);
+            font-weight: 700;
+        }
+
+        pre {
+            margin: 0;
+            min-height: 290px;
+            max-height: 560px;
+            overflow: auto;
+            border: 1px solid rgba(245, 227, 194, 0.42);
+            border-radius: 14px;
+            padding: 12px;
+            background:
+                linear-gradient(180deg, #2a221b, var(--code-bg));
+            color: var(--code-fg);
+            font-size: 0.83rem;
+            line-height: 1.45;
+        }
+
+        .muted {
+            color: #7d6b58;
+            font-size: 0.82rem;
+        }
+
+        @keyframes fade-up {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.08); opacity: 0.8; }
+        }
+
+        @media (max-width: 920px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .actions {
+                grid-template-columns: 1fr;
+            }
+
+            .input-row {
+                grid-template-columns: 1fr;
+            }
+
+            .shell {
+                width: min(1120px, calc(100% - 20px));
+                margin-top: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+<main class="shell">
+    <section class="hero">
+        <span class="mark">Conselho da Guilda</span>
+        <h1>Registro Oficial de Aventureiros</h1>
+        <p>Painel de consulta da API. Todos os recursos seguem as regras de classe, nivel, estado ativo e composicao de companheiro.</p>
+    </section>
+
+    <section class="layout">
+        <article class="panel">
+            <header class="panel-head">
+                <h2>Mapa de Endpoints</h2>
+                <span class="legend">Ordenacao por id e paginacao por page/size</span>
+            </header>
+            <div class="panel-body endpoint-list">
+                <div class="endpoint">
+                    <div class="endpoint-row">
+                        <span class="method get">GET</span>
+                        <span class="path">/status</span>
+                    </div>
+                    <p>Status tecnico da API.</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-row">
+                        <span class="method post">POST</span>
+                        <span class="path">/aventureiros</span>
+                    </div>
+                    <p>Registra novo aventureiro e retorna 201 com Location.</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-row">
+                        <span class="method get">GET</span>
+                        <span class="path">/aventureiros?classe=&ativo=&nivelMinimo=&page=0&size=10</span>
+                    </div>
+                    <p>Lista com filtros opcionais e headers de paginacao.</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-row">
+                        <span class="method get">GET</span>
+                        <span class="path">/aventureiros/{id}</span>
+                    </div>
+                    <p>Detalhe do aventureiro, incluindo companheiro quando existir.</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-row">
+                        <span class="method put">PUT</span>
+                        <span class="path">/aventureiros/{id}</span>
+                    </div>
+                    <p>Atualiza apenas nome, classe e nivel.</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-row">
+                        <span class="method patch">PATCH</span>
+                        <span class="path">/aventureiros/{id}/encerrar-vinculo</span>
+                    </div>
+                    <p>Marca aventureiro como inativo (registro continua no sistema).</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-row">
+                        <span class="method patch">PATCH</span>
+                        <span class="path">/aventureiros/{id}/recrutar-novamente</span>
+                    </div>
+                    <p>Reativa um aventureiro previamente inativo.</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-row">
+                        <span class="method put">PUT</span>
+                        <span class="path">/aventureiros/{id}/companheiro</span>
+                    </div>
+                    <p>Define ou substitui companheiro associado.</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-row">
+                        <span class="method delete">DELETE</span>
+                        <span class="path">/aventureiros/{id}/companheiro</span>
+                    </div>
+                    <p>Remove companheiro, mantendo o aventureiro registrado.</p>
+                </div>
+            </div>
+        </article>
+
+        <article class="panel">
+            <header class="panel-head">
+                <h2>Console da Guilda</h2>
+                <span class="status-chip">API Online</span>
+            </header>
+            <div class="panel-body console">
+                <div class="actions">
+                    <button type="button" id="btnStatus">Ver /status</button>
+                    <button type="button" id="btnListar">Listar 10 primeiros</button>
+                </div>
+
+                <div class="input-row">
+                    <input id="idInput" type="number" min="1" value="1" placeholder="ID do aventureiro">
+                    <button type="button" id="btnDetalhe">Consultar por ID</button>
+                </div>
+
+                <div class="status-line">
+                    <span id="reqInfo">Pronto para consulta</span>
+                    <span class="muted">Resposta JSON</span>
+                </div>
+
+                <pre id="saida">Escolha uma acao para testar a API.</pre>
+            </div>
+        </article>
+    </section>
+</main>
+
+<script>
+    const btnStatus = document.getElementById("btnStatus");
+    const btnListar = document.getElementById("btnListar");
+    const btnDetalhe = document.getElementById("btnDetalhe");
+    const idInput = document.getElementById("idInput");
+    const saida = document.getElementById("saida");
+    const reqInfo = document.getElementById("reqInfo");
+
+    function print(data) {
+        saida.textContent = JSON.stringify(data, null, 2);
+    }
+
+    async function callApi(url) {
+        reqInfo.textContent = "Consultando " + url + "...";
+        try {
+            const response = await fetch(url);
+            const body = await response.json().catch(() => ({}));
+            const headers = {
+                status: response.status,
+                ok: response.ok,
+                xTotalCount: response.headers.get("X-Total-Count"),
+                xPage: response.headers.get("X-Page"),
+                xSize: response.headers.get("X-Size"),
+                xTotalPages: response.headers.get("X-Total-Pages")
+            };
+            print({headers, body});
+            reqInfo.textContent = response.ok
+                ? "Consulta concluida com sucesso"
+                : "Consulta concluida com erro HTTP " + response.status;
+        } catch (error) {
+            print({erro: String(error)});
+            reqInfo.textContent = "Falha de conexao";
+        }
+    }
+
+    btnStatus.addEventListener("click", () => callApi("/status"));
+    btnListar.addEventListener("click", () => callApi("/aventureiros?page=0&size=10"));
+    btnDetalhe.addEventListener("click", () => {
+        const id = Number(idInput.value);
+        if (!id || id < 1) {
+            print({erro: "Informe um id valido (>= 1)."});
+            reqInfo.textContent = "Entrada invalida";
+            return;
+        }
+        callApi("/aventureiros/" + id);
+    });
+
+    idInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+            btnDetalhe.click();
+        }
+    });
+</script>
+</body>
+</html>
