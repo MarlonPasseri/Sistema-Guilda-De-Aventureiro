@@ -8,6 +8,12 @@ import jakarta.validation.constraints.NotNull;
 
 public class CreateAventureiroRequest {
 
+    @NotNull(message = "organizacaoId e obrigatorio")
+    private Long organizacaoId;
+
+    @NotNull(message = "usuarioCadastroId e obrigatorio")
+    private Long usuarioCadastroId;
+
     @NotBlank(message = "nome e obrigatorio")
     private String nome;
 
@@ -18,6 +24,22 @@ public class CreateAventureiroRequest {
     @NotNull(message = "nivel e obrigatorio")
     @Min(value = 1, message = "nivel deve ser maior ou igual a 1")
     private Integer nivel;
+
+    public Long getOrganizacaoId() {
+        return organizacaoId;
+    }
+
+    public void setOrganizacaoId(Long organizacaoId) {
+        this.organizacaoId = organizacaoId;
+    }
+
+    public Long getUsuarioCadastroId() {
+        return usuarioCadastroId;
+    }
+
+    public void setUsuarioCadastroId(Long usuarioCadastroId) {
+        this.usuarioCadastroId = usuarioCadastroId;
+    }
 
     public String getNome() {
         return nome;

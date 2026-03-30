@@ -1,39 +1,82 @@
-# Registro Oficial da Guilda de Aventureiros
+# Sistema de Gestao de Aventureiros
 
-![Java](https://img.shields.io/badge/Java-17-007396?logo=openjdk&logoColor=white)
-![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.3.3-6DB33F?logo=springboot&logoColor=white)
-![Maven](https://img.shields.io/badge/Maven-Build-C71A36?logo=apachemaven&logoColor=white)
-![API](https://img.shields.io/badge/API-REST-005571?logo=fastapi&logoColor=white)
-![Persistencia](https://img.shields.io/badge/Persistencia-ArrayList_em_memoria-b8860b)
-![Status](https://img.shields.io/badge/Status-Pronto_para_avaliacao-1f7a45)
+Projeto Spring Boot evoluido para trabalhar com:
 
-API REST em Java para o **Registro Oficial da Guilda**, com foco em consistencia de regras de negocio, sem uso de banco de dados externo.
+- schema legado `audit` ja existente no PostgreSQL
+- novo schema `aventura` criado pela aplicacao
+- consultas operacionais e relatorios do dominio de aventureiros
 
-## Objetivo
+## O que foi implementado
 
-Gerenciar aventureiros da guilda garantindo:
+### Parte 1
 
-- registro valido com `id` gerado pelo sistema
-- controle de estado (`ativo`/`inativo`) sem exclusao historica
-- validacao rigorosa de `classe`, `nivel` e dados de `companheiro`
-- composicao correta: companheiro existe apenas dentro de um aventureiro
+- entidades JPA para todo o schema `audit`
+- mapeamento de `@ManyToOne`, `@OneToMany` e `@ManyToMany`
+- tabelas de juncao com chave composta:
+  - `audit.user_roles`
+  - `audit.role_permissions`
+- repositorios para organizacoes, usuarios, roles, permissions, api keys e audit entries
+- endpoints para:
+  - listar usuarios com roles
+  - listar roles com permissions
+  - criar usuario vinculado a organizacao existente
 
-## Tecnologias
+### Parte 2
+
+- schema `aventura` criado via script idempotente
+- entidades persistentes:
+  - `Aventureiro`
+  - `Companheiro`
+  - `Missao`
+  - `ParticipacaoMissao`
+- integridade entre organizacoes, usuarios, aventureiros e missoes
+- regras de negocio principais:
+  - sem relacionamento cruzado entre organizacoes
+  - aventureiro inativo nao entra em novas missoes
+  - participacao unica por par `(missao, aventureiro)`
+  - companheiro com composicao `1:1` e remocao junto do aventureiro
+
+### Parte 3
+
+- listagem de aventureiros com filtros, ordenacao e paginacao
+- busca textual parcial por nome
+- perfil completo do aventureiro com companheiro, total de participacoes e ultima missao
+- listagem de missoes com filtros, ordenacao e paginacao
+- detalhamento de missao com participantes
+- ranking de participacao
+- relatorio de missoes com metricas agregadas
+- testes para cada busca/consulta relevante
+
+## Stack
 
 - Java 17
 - Spring Boot 3.3.3
 - Spring Web
-- Spring Validation
+- Spring Data JPA
+- PostgreSQL
 - Maven
+
+## Banco da avaliacao
+
+Imagem utilizada:
+
+- `leogloriainfnet/postgres-tp2-spring:1.0`
+
+Observacao importante:
+
+- o usuario `appuser` criado pela imagem nao possui privilegio `REFERENCES` suficiente para criar as FKs do schema `aventura`
+- por isso a aplicacao esta configurada por padrao para subir com `postgres/postgres`
+- se quiser usar outras credenciais, basta sobrescrever `DB_URL`, `DB_USERNAME` e `DB_PASSWORD`
 
 ## Como executar
 
-### 1) Requisitos
+### 1. Subir o PostgreSQL legado
 
-- Java 17+ instalado
-- Maven instalado
+```bash
+docker run -d --name tp1-audit-db -e POSTGRES_PASSWORD=postgres -p 5432:5432 leogloriainfnet/postgres-tp2-spring:1.0
+```
 
-### 2) Rodar localmente
+### 2. Rodar a aplicacao
 
 ```bash
 mvn spring-boot:run
@@ -41,190 +84,102 @@ mvn spring-boot:run
 
 API disponivel em:
 
-- `http://localhost:8080/` (UI amigavel)
-- `http://localhost:8080/status` (status tecnico JSON)
+- `http://localhost:8080/`
+- `http://localhost:8080/status`
 
-### 3) Build
-
-```bash
-mvn clean package
-```
-
-### 4) Executar JAR
+### 3. Rodar os testes
 
 ```bash
-java -jar target/registro-guilda-0.0.1-SNAPSHOT.jar
+mvn test
 ```
 
-## Regras de negocio implementadas
+## Configuracao
 
-### Aventureiro
+Os valores padrao estao em `src/main/resources/application.properties`:
 
-- `id` gerado automaticamente
-- `nome` obrigatorio e nao vazio
-- `classe` obrigatoria e restrita a:
-  - `GUERREIRO`
-  - `MAGO`
-  - `ARQUEIRO`
-  - `CLERIGO`
-  - `LADINO`
-- `nivel` obrigatorio e `>= 1`
-- novo aventureiro sempre inicia com `ativo = true`
-- aventureiro inativo continua registrado
-
-### Companheiro (composicao)
-
-- opcional no aventureiro
-- nao existe isoladamente
-- nao e compartilhado
-- quando informado:
-  - `nome` obrigatorio
-  - `especie` obrigatoria e restrita a:
-    - `LOBO`
-    - `CORUJA`
-    - `GOLEM`
-    - `DRAGAO_MINIATURA`
-  - `lealdade` entre `0` e `100`
-
-### Validacoes de requisicao
-
-- payloads invalidos retornam `400 Bad Request`
-- recurso inexistente retorna `404 Not Found`
-- erros seguem formato padrao:
-
-```json
-{
-  "mensagem": "Solicitacao invalida",
-  "detalhes": [
-    "classe invalida",
-    "nivel deve ser maior ou igual a 1"
-  ]
-}
+```properties
+spring.datasource.url=jdbc:postgresql://localhost:5432/postgres
+spring.datasource.username=postgres
+spring.datasource.password=postgres
+spring.jpa.hibernate.ddl-auto=validate
+spring.sql.init.mode=always
+spring.sql.init.schema-locations=classpath:db/schema-aventura.sql
 ```
 
-## Endpoints
+## Endpoints principais
 
-Base URL: `http://localhost:8080`
+### Audit
 
-### 1) Registrar aventureiro
+- `GET /audit/usuarios?organizacaoId=1`
+- `GET /audit/usuarios/{id}`
+- `POST /audit/usuarios`
+- `GET /audit/roles?organizacaoId=1`
+- `GET /audit/roles/{id}`
 
-- **POST** `/aventureiros`
-- Body:
+### Aventureiros
 
-```json
-{
-  "nome": "Arthos",
-  "classe": "GUERREIRO",
-  "nivel": 7
-}
-```
+- `POST /aventureiros`
+- `GET /aventureiros?organizacaoId=1&ativo=true&classe=MAGO&nivelMinimo=5&page=0&size=10&sortBy=nivel&direction=desc`
+- `GET /aventureiros/busca?organizacaoId=1&nome=art&page=0&size=10`
+- `GET /aventureiros/{id}?organizacaoId=1`
+- `PUT /aventureiros/{id}?organizacaoId=1`
+- `PATCH /aventureiros/{id}/encerrar-vinculo?organizacaoId=1`
+- `PATCH /aventureiros/{id}/recrutar-novamente?organizacaoId=1`
+- `PUT /aventureiros/{id}/companheiro?organizacaoId=1`
+- `DELETE /aventureiros/{id}/companheiro?organizacaoId=1`
 
-- Retorno: `201 Created` + header `Location`
+### Missoes
 
-### 2) Listar aventureiros (filtros + paginacao)
+- `POST /missoes`
+- `GET /missoes?organizacaoId=1&status=CONCLUIDA&nivelPerigo=ALTO&page=0&size=10`
+- `GET /missoes/{id}?organizacaoId=1`
+- `POST /missoes/{id}/participacoes?organizacaoId=1`
 
-- **GET** `/aventureiros`
-- Query params opcionais:
-  - `classe`
-  - `ativo`
-  - `nivelMinimo`
-  - `page` (default: `0`, minimo: `0`)
-  - `size` (default: `10`, intervalo: `1..50`)
+### Relatorios
 
-Exemplo:
+- `GET /relatorios/aventureiros/ranking?organizacaoId=1`
+- `GET /relatorios/missoes?organizacaoId=1`
 
-`GET /aventureiros?classe=MAGO&ativo=true&nivelMinimo=5&page=0&size=10`
-
-Headers de resposta obrigatorios:
-
-- `X-Total-Count`
-- `X-Page`
-- `X-Size`
-- `X-Total-Pages`
-
-Observacoes:
-
-- ordenacao sempre crescente por `id`
-- filtros aplicados antes da paginacao
-- pagina fora do intervalo retorna lista vazia + headers corretos
-
-### 3) Consultar por ID
-
-- **GET** `/aventureiros/{id}`
-- Retorna dados completos, incluindo companheiro quando houver
-
-### 4) Atualizar aventureiro
-
-- **PUT** `/aventureiros/{id}`
-- Permite atualizar somente:
-  - `nome`
-  - `classe`
-  - `nivel`
-
-Nao permite alterar:
-
-- `id`
-- `ativo`
-- `companheiro`
-
-### 5) Encerrar vinculo
-
-- **PATCH** `/aventureiros/{id}/encerrar-vinculo`
-- Seta `ativo = false`
-
-### 6) Recrutar novamente
-
-- **PATCH** `/aventureiros/{id}/recrutar-novamente`
-- Seta `ativo = true`
-
-### 7) Definir/substituir companheiro
-
-- **PUT** `/aventureiros/{id}/companheiro`
-- Body:
-
-```json
-{
-  "nome": "Fenrir",
-  "especie": "LOBO",
-  "lealdade": 95
-}
-```
-
-### 8) Remover companheiro
-
-- **DELETE** `/aventureiros/{id}/companheiro`
-- Retorno: `204 No Content`
-
-## Estrutura do projeto
+## Estrutura resumida
 
 ```text
 src/main/java/br/com/guilda/registro
-  ├─ controller
-  ├─ service
-  ├─ repository
-  ├─ domain
-  ├─ dto
-  ├─ exception
-  └─ validation
+  |- audit/domain
+  |- audit/repository
+  |- controller
+  |- domain
+  |- dto
+  |- exception
+  |- repository
+  |- service
+  |- validation
+src/main/resources/db/schema-aventura.sql
+src/test/java/br/com/guilda/registro
 ```
 
-## Persistencia em memoria
+## Testes implementados
 
-- Implementada por classe repositório com `ArrayList`
-- Inicializada com **120 registros** ao subir a aplicacao
-- Sem banco externo, conforme requisito
+- `AuditMappingRepositoryTest`
+- `AventureiroQueryServiceTest`
+- `MissaoRelatorioServiceTest`
 
-## Interface amigavel
+Cobertura validada com:
 
-A raiz `/` entrega uma pagina HTML com:
+- carga de usuario com roles
+- carga de role com permissions
+- persistencia de novo usuario em organizacao existente
+- filtros de aventureiros
+- busca parcial por nome
+- perfil completo do aventureiro
+- filtros de missao
+- detalhamento de missao
+- ranking de participacao
+- relatorio de missoes com metricas
 
-- visual de painel da guilda
-- mapa de endpoints
-- console interativo para testar:
-  - `GET /status`
-  - `GET /aventureiros?page=0&size=10`
-  - `GET /aventureiros/{id}`
+## Documento de analise
 
-## Autor
+Foi adicionado:
 
-- Projeto desenvolvido para o TP1 Java 2026.
+- `docs/analise-requisitos.md`
+
+Nao gerei PDF automaticamente porque o ambiente atual nao possui ferramenta instalada para conversao direta.

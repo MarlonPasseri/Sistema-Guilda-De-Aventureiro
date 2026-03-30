@@ -36,4 +36,8 @@ public class ApiException extends RuntimeException {
     public static ApiException notFound(String detalhe) {
         return new ApiException(HttpStatus.NOT_FOUND, "Recurso nao encontrado", List.of(detalhe));
     }
+
+    public static ApiException conflict(String detalhe) {
+        return new ApiException(HttpStatus.CONFLICT, "Conflito de dados", List.of(detalhe));
+    }
 }

@@ -14,8 +14,11 @@ public class HomeController {
     public Map<String, String> home() {
         return Map.of(
             "mensagem", "API da Guilda em execucao",
-            "listar", "GET /aventureiros",
-            "consultarPorId", "GET /aventureiros/{id}"
+            "auditUsuarios", "GET /audit/usuarios?organizacaoId=1",
+            "auditRoles", "GET /audit/roles?organizacaoId=1",
+            "aventuras", "GET /aventureiros?organizacaoId=1",
+            "missoes", "GET /missoes?organizacaoId=1",
+            "relatorios", "GET /relatorios/aventureiros/ranking?organizacaoId=1"
         );
     }
 }

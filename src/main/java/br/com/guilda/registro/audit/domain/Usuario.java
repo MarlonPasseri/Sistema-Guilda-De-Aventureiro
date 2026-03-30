@@ -1,8 +1,5 @@
-package br.com.guilda.registro.domain;
+package br.com.guilda.registro.audit.domain;
 
-import br.com.guilda.registro.audit.domain.Organizacao;
-import br.com.guilda.registro.audit.domain.Usuario;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -12,9 +9,10 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -24,8 +22,8 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "aventureiros", schema = "aventura")
-public class Aventureiro {
+@Table(name = "usuarios", schema = "audit")
+public class Usuario {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,22 +33,21 @@ public class Aventureiro {
     @JoinColumn(name = "organizacao_id", nullable = false)
     private Organizacao organizacao;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "usuario_cadastro_id", nullable = false)
-    private Usuario usuarioCadastro;
-
     @Column(nullable = false, length = 120)
     private String nome;
 
+    @Column(nullable = false, length = 180)
+    private String email;
+
+    @Column(name = "senha_hash", nullable = false, length = 255)
+    private String senhaHash;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
-    private ClasseAventureiro classe;
+    private UsuarioStatus status;
 
-    @Column(nullable = false)
-    private Integer nivel;
-
-    @Column(nullable = false)
-    private boolean ativo = true;
+    @Column(name = "ultimo_login_em")
+    private OffsetDateTime ultimoLoginEm;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
@@ -58,11 +55,20 @@ public class Aventureiro {
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
-    @OneToOne(mappedBy = "aventureiro", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private Companheiro companheiro;
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        schema = "audit",
+        name = "user_roles",
+        joinColumns = @JoinColumn(name = "usuario_id"),
+        inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    private Set<Role> roles = new LinkedHashSet<>();
 
-    @OneToMany(mappedBy = "aventureiro", fetch = FetchType.LAZY)
-    private Set<ParticipacaoMissao> participacoes = new LinkedHashSet<>();
+    @OneToMany(mappedBy = "usuario", fetch = FetchType.LAZY)
+    private Set<UserRole> userRoles = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "actorUser", fetch = FetchType.LAZY)
+    private Set<AuditEntry> auditEntries = new LinkedHashSet<>();
 
     @PrePersist
     public void prePersist() {
@@ -78,25 +84,9 @@ public class Aventureiro {
         updatedAt = OffsetDateTime.now();
     }
 
-    public void definirCompanheiro(Companheiro novoCompanheiro) {
-        if (novoCompanheiro == null) {
-            this.companheiro = null;
-            return;
-        }
-        novoCompanheiro.setAventureiro(this);
-        this.companheiro = novoCompanheiro;
-    }
-
-    public void removerCompanheiro() {
-        if (companheiro != null) {
-            companheiro.setAventureiro(null);
-            companheiro = null;
-        }
-    }
-
-    public void adicionarParticipacao(ParticipacaoMissao participacao) {
-        participacoes.add(participacao);
-        participacao.setAventureiro(this);
+    public void addRole(Role role) {
+        roles.add(role);
+        role.getUsuarios().add(this);
     }
 
     public Long getId() {
@@ -115,14 +105,6 @@ public class Aventureiro {
         this.organizacao = organizacao;
     }
 
-    public Usuario getUsuarioCadastro() {
-        return usuarioCadastro;
-    }
-
-    public void setUsuarioCadastro(Usuario usuarioCadastro) {
-        this.usuarioCadastro = usuarioCadastro;
-    }
-
     public String getNome() {
         return nome;
     }
@@ -131,28 +113,36 @@ public class Aventureiro {
         this.nome = nome;
     }
 
-    public ClasseAventureiro getClasse() {
-        return classe;
+    public String getEmail() {
+        return email;
     }
 
-    public void setClasse(ClasseAventureiro classe) {
-        this.classe = classe;
+    public void setEmail(String email) {
+        this.email = email;
     }
 
-    public Integer getNivel() {
-        return nivel;
+    public String getSenhaHash() {
+        return senhaHash;
     }
 
-    public void setNivel(Integer nivel) {
-        this.nivel = nivel;
+    public void setSenhaHash(String senhaHash) {
+        this.senhaHash = senhaHash;
     }
 
-    public boolean isAtivo() {
-        return ativo;
+    public UsuarioStatus getStatus() {
+        return status;
     }
 
-    public void setAtivo(boolean ativo) {
-        this.ativo = ativo;
+    public void setStatus(UsuarioStatus status) {
+        this.status = status;
+    }
+
+    public OffsetDateTime getUltimoLoginEm() {
+        return ultimoLoginEm;
+    }
+
+    public void setUltimoLoginEm(OffsetDateTime ultimoLoginEm) {
+        this.ultimoLoginEm = ultimoLoginEm;
     }
 
     public OffsetDateTime getCreatedAt() {
@@ -171,11 +161,15 @@ public class Aventureiro {
         this.updatedAt = updatedAt;
     }
 
-    public Companheiro getCompanheiro() {
-        return companheiro;
+    public Set<Role> getRoles() {
+        return roles;
     }
 
-    public Set<ParticipacaoMissao> getParticipacoes() {
-        return participacoes;
+    public Set<UserRole> getUserRoles() {
+        return userRoles;
+    }
+
+    public Set<AuditEntry> getAuditEntries() {
+        return auditEntries;
     }
 }
