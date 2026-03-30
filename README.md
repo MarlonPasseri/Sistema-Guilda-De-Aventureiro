@@ -182,4 +182,3 @@ Foi adicionado:
 
 - `docs/analise-requisitos.md`
 
-Nao gerei PDF automaticamente porque o ambiente atual nao possui ferramenta instalada para conversao direta.
