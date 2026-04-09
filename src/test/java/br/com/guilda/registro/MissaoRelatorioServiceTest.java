@@ -21,11 +21,13 @@ import br.com.guilda.registro.repository.MissaoRepository;
 import br.com.guilda.registro.repository.ParticipacaoMissaoRepository;
 import br.com.guilda.registro.service.MissaoService;
 import br.com.guilda.registro.service.RelatorioService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -58,6 +60,17 @@ class MissaoRelatorioServiceTest {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @BeforeEach
+    void limparDadosDoSchemaAventura() {
+        jdbcTemplate.execute("delete from aventura.participacoes_missao");
+        jdbcTemplate.execute("delete from aventura.companheiros");
+        jdbcTemplate.execute("delete from aventura.missoes");
+        jdbcTemplate.execute("delete from aventura.aventureiros");
+    }
 
     @Test
     void deveListarMissoesComFiltros() {
