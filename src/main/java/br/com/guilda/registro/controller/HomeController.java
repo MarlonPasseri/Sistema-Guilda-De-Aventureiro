@@ -18,7 +18,10 @@ public class HomeController {
             "auditRoles", "GET /audit/roles?organizacaoId=1",
             "aventuras", "GET /aventureiros?organizacaoId=1",
             "missoes", "GET /missoes?organizacaoId=1",
-            "relatorios", "GET /relatorios/aventureiros/ranking?organizacaoId=1"
+            "relatorios", "GET /relatorios/aventureiros/ranking?organizacaoId=1",
+            "rankingRedis", "GET /missoes/top15dias",
+            "historicoMongo", "GET /produtos/buscas/historico",
+            "diagnosticos", "GET /diagnosticos/autoconfiguracao/persistencia"
         );
     }
 }

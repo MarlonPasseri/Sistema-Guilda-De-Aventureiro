@@ -3,424 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Aventureiros</title>
-    <style>
-        :root {
-            --bg: #0f1722;
-            --bg-soft: #182536;
-            --panel: rgba(13, 20, 32, 0.82);
-            --panel-strong: #111c2c;
-            --line: rgba(255, 255, 255, 0.12);
-            --line-strong: rgba(255, 207, 125, 0.34);
-            --ink: #f7efe2;
-            --muted: #bdb4a6;
-            --accent: #f3a65e;
-            --accent-strong: #ffd07f;
-            --teal: #7dddc3;
-            --danger: #ff8d8d;
-            --shadow: 0 24px 60px rgba(0, 0, 0, 0.32);
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            min-height: 100vh;
-            color: var(--ink);
-            font-family: "Palatino Linotype", Georgia, serif;
-            background:
-                radial-gradient(circle at top left, rgba(255, 208, 127, 0.18), transparent 32%),
-                radial-gradient(circle at top right, rgba(125, 221, 195, 0.12), transparent 26%),
-                linear-gradient(145deg, #101723 0%, #142033 42%, #0b1119 100%);
-        }
-
-        body::before,
-        body::after {
-            content: "";
-            position: fixed;
-            inset: auto;
-            width: 340px;
-            height: 340px;
-            border-radius: 50%;
-            pointer-events: none;
-            filter: blur(18px);
-            opacity: 0.28;
-        }
-
-        body::before {
-            top: -120px;
-            right: -80px;
-            background: radial-gradient(circle, rgba(243, 166, 94, 0.48), transparent 68%);
-        }
-
-        body::after {
-            bottom: -120px;
-            left: -80px;
-            background: radial-gradient(circle, rgba(125, 221, 195, 0.35), transparent 70%);
-        }
-
-        code,
-        input,
-        select,
-        textarea,
-        pre {
-            font-family: Consolas, "Courier New", monospace;
-        }
-
-        .page {
-            width: min(1260px, calc(100% - 28px));
-            margin: 18px auto 30px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .card {
-            background: var(--panel);
-            border: 1px solid var(--line);
-            border-radius: 24px;
-            box-shadow: var(--shadow);
-            backdrop-filter: blur(12px);
-        }
-
-        .hero {
-            display: grid;
-            grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
-            gap: 18px;
-            padding: 28px;
-            margin-bottom: 18px;
-            overflow: hidden;
-        }
-
-        .eyebrow,
-        .section-kicker {
-            margin: 0 0 12px;
-            color: var(--accent-strong);
-            font: 700 0.8rem/1.2 Arial, sans-serif;
-            letter-spacing: 0.18em;
-            text-transform: uppercase;
-        }
-
-        h1,
-        h2 {
-            margin: 0;
-            line-height: 1.05;
-        }
-
-        h1 {
-            font-size: clamp(2.4rem, 4vw, 4.6rem);
-            max-width: 10ch;
-        }
-
-        .lead {
-            margin: 14px 0 0;
-            max-width: 60ch;
-            color: var(--muted);
-            font-size: 1.03rem;
-            line-height: 1.6;
-        }
-
-        .hero-stats {
-            display: grid;
-            gap: 12px;
-            align-content: start;
-        }
-
-        .stat {
-            padding: 16px 18px;
-            border-radius: 18px;
-            border: 1px solid var(--line);
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(17, 28, 44, 0.66));
-        }
-
-        .stat-label {
-            display: block;
-            color: var(--muted);
-            font: 600 0.8rem/1.2 Arial, sans-serif;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-        }
-
-        .stat strong {
-            display: block;
-            margin-top: 8px;
-            font-size: 1.14rem;
-        }
-
-        .layout {
-            display: grid;
-            grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-            gap: 18px;
-        }
-
-        .presets,
-        .context,
-        .composer,
-        .response,
-        .history {
-            padding: 22px;
-        }
-
-        .composer {
-            grid-column: 1 / -1;
-        }
-
-        .section-head {
-            display: flex;
-            align-items: end;
-            justify-content: space-between;
-            gap: 16px;
-            margin-bottom: 16px;
-        }
-
-        .section-head p,
-        .panel-note,
-        .hint-list,
-        .preset-hint {
-            margin: 0;
-            color: var(--muted);
-            line-height: 1.5;
-        }
-
-        .preset-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 12px;
-        }
-
-        .preset-card,
-        .action-button,
-        .history-item button {
-            width: 100%;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 18px;
-            padding: 14px 15px;
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(17, 28, 44, 0.88));
-            color: var(--ink);
-            text-align: left;
-            cursor: pointer;
-            transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
-        }
-
-        .preset-card:hover,
-        .action-button:hover,
-        .history-item button:hover {
-            transform: translateY(-2px);
-            border-color: var(--line-strong);
-            box-shadow: 0 14px 30px rgba(0, 0, 0, 0.22);
-        }
-
-        .preset-card.active {
-            border-color: var(--line-strong);
-            background: linear-gradient(180deg, rgba(243, 166, 94, 0.18), rgba(17, 28, 44, 0.92));
-        }
-
-        .preset-card strong,
-        .history-item strong {
-            display: block;
-            font-size: 0.98rem;
-        }
-
-        .preset-card span,
-        .history-item span {
-            display: block;
-            margin-top: 8px;
-            color: var(--muted);
-            font-size: 0.9rem;
-            line-height: 1.45;
-        }
-
-        .form-grid,
-        .request-grid,
-        .response-meta {
-            display: grid;
-            gap: 12px;
-        }
-
-        .form-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-
-        .request-grid {
-            grid-template-columns: 140px minmax(0, 1fr);
-        }
-
-        .field,
-        .field-full {
-            display: grid;
-            gap: 8px;
-        }
-
-        .field span,
-        .field-full span {
-            color: var(--muted);
-            font: 600 0.78rem/1.2 Arial, sans-serif;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-        }
-
-        .field-full {
-            margin-top: 12px;
-        }
-
-        input,
-        select,
-        textarea {
-            width: 100%;
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            border-radius: 14px;
-            padding: 12px 13px;
-            background: rgba(7, 12, 20, 0.66);
-            color: var(--ink);
-        }
-
-        textarea {
-            min-height: 220px;
-            resize: vertical;
-        }
-
-        .hint-list {
-            margin-top: 16px;
-            padding: 14px 16px;
-            border-radius: 18px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            background: rgba(255, 255, 255, 0.03);
-            font-size: 0.92rem;
-        }
-
-        .toolbar,
-        .history-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 14px;
-        }
-
-        .action-button {
-            width: auto;
-            min-width: 144px;
-            padding: 12px 16px;
-            font-weight: 700;
-        }
-
-        .action-button.primary {
-            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
-            color: #24160c;
-            border-color: rgba(255, 207, 125, 0.75);
-        }
-
-        .preview-box,
-        pre,
-        .history-item {
-            margin-top: 14px;
-            border-radius: 18px;
-        }
-
-        .preview-box {
-            padding: 14px 16px;
-            border: 1px solid rgba(125, 221, 195, 0.28);
-            background: rgba(125, 221, 195, 0.08);
-        }
-
-        .preview-label {
-            display: block;
-            margin-bottom: 8px;
-            color: var(--teal);
-            font: 700 0.78rem/1.2 Arial, sans-serif;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-        }
-
-        .preview-box code {
-            display: block;
-            color: #effff9;
-            white-space: normal;
-            word-break: break-all;
-        }
-
-        .response-meta {
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-        }
-
-        .meta-chip {
-            padding: 12px 14px;
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            background: rgba(255, 255, 255, 0.04);
-            color: var(--muted);
-            font: 700 0.8rem/1.3 Arial, sans-serif;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-        }
-
-        .meta-chip.ok {
-            color: var(--teal);
-            border-color: rgba(125, 221, 195, 0.28);
-        }
-
-        .meta-chip.error {
-            color: var(--danger);
-            border-color: rgba(255, 141, 141, 0.28);
-        }
-
-        pre {
-            min-height: 420px;
-            margin: 14px 0 0;
-            overflow: auto;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            background: #071019;
-            color: #edf6ff;
-            padding: 16px;
-            font-size: 0.83rem;
-            line-height: 1.55;
-        }
-
-        .history-list {
-            display: grid;
-            gap: 12px;
-            align-content: start;
-        }
-
-        .history-item {
-            padding: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            background: rgba(255, 255, 255, 0.03);
-        }
-
-        .history-empty {
-            margin: 0;
-            color: var(--muted);
-        }
-
-        @media (max-width: 980px) {
-            .hero,
-            .layout {
-                grid-template-columns: 1fr;
-            }
-
-            .response-meta,
-            .form-grid,
-            .preset-grid,
-            .request-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    <title>Painel da Guilda de Aventureiros</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script defer src="/app.js"></script>
 </head>
 <body>
 <main class="page">
-    <section class="hero card">
-        <div>
-            <p class="eyebrow">TP Java 2026</p>
-            <h1>Centro de comando da guilda</h1>
-            <p class="lead">Uma interface estatica mais interativa para explorar o schema legado <code>audit</code>, testar o dominio <code>aventura</code> e navegar pelas consultas operacionais sem sair da pagina.</p>
+    <header class="hero card">
+        <div class="hero-copy">
+            <p class="eyebrow">Operacoes Estrategicas</p>
+            <h1>Painel da Guilda de Aventureiros</h1>
+            <p class="lead">
+                Um centro de comando unico para explorar tudo que o sistema faz:
+                auditoria, aventureiros, missoes, ranking tatico, relatorios,
+                cache Redis, historico MongoDB, marketplace com Elasticsearch e
+                diagnosticos operacionais.
+            </p>
+
+            <div class="hero-chips">
+                <span class="hero-chip">Audit</span>
+                <span class="hero-chip">Aventureiros</span>
+                <span class="hero-chip">Missoes</span>
+                <span class="hero-chip">Relatorios</span>
+                <span class="hero-chip">Marketplace</span>
+                <span class="hero-chip">Diagnosticos</span>
+            </div>
         </div>
 
         <div class="hero-stats">
             <div class="stat">
-                <span class="stat-label">Preset ativo</span>
+                <span class="stat-label">Acao ativa</span>
                 <strong id="activePresetLabel">Status da API</strong>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Acesso recomendado</span>
+                <strong id="accessHintLabel">PUBLICO</strong>
             </div>
             <div class="stat">
                 <span class="stat-label">Ultima resposta</span>
@@ -431,673 +48,383 @@
                 <strong id="clockLabel">--:--:--</strong>
             </div>
         </div>
-    </section>
+    </header>
 
-    <section class="layout">
-        <article class="card presets">
+    <section class="deck">
+        <article class="card auth-panel">
             <div class="section-head">
                 <div>
-                    <p class="section-kicker">Cenarios</p>
-                    <h2>Rotas prontas para explorar</h2>
+                    <p class="section-kicker">Acesso</p>
+                    <h2>Credenciais da exploracao</h2>
                 </div>
-                <p class="panel-note">Clique em um cenario, ajuste o contexto e execute.</p>
+                <p class="panel-note">A pagina fica publica; as APIs protegidas usam Basic Auth.</p>
             </div>
 
-            <div class="preset-grid">
-                <button type="button" class="preset-card active" data-preset="status">
-                    <strong>Status da API</strong>
-                    <span>Confere se a aplicacao esta de pe e devolve as rotas-base.</span>
-                </button>
-                <button type="button" class="preset-card" data-preset="auditUsers">
-                    <strong>Usuarios com roles</strong>
-                    <span>Leitura do core legado por organizacao.</span>
-                </button>
-                <button type="button" class="preset-card" data-preset="auditRoles">
-                    <strong>Roles com permissions</strong>
-                    <span>Mostra o vinculo entre papeis e permissoes.</span>
-                </button>
-                <button type="button" class="preset-card" data-preset="createUser">
-                    <strong>Novo usuario</strong>
-                    <span>Monta o JSON de cadastro ligado a uma organizacao.</span>
-                </button>
-                <button type="button" class="preset-card" data-preset="listAventureiros">
-                    <strong>Listar aventureiros</strong>
-                    <span>Filtra por classe, status e nivel minimo.</span>
-                </button>
-                <button type="button" class="preset-card" data-preset="searchAventureiros">
-                    <strong>Busca por nome</strong>
-                    <span>Pesquisa textual parcial com paginacao.</span>
-                </button>
-                <button type="button" class="preset-card" data-preset="createAventureiro">
-                    <strong>Novo aventureiro</strong>
-                    <span>Gera um payload para o dominio aventura.</span>
-                </button>
-                <button type="button" class="preset-card" data-preset="upsertCompanheiro">
-                    <strong>Vincular companheiro</strong>
-                    <span>Usa o recurso atual para definir um parceiro exclusivo.</span>
-                </button>
-                <button type="button" class="preset-card" data-preset="listMissoes">
-                    <strong>Listar missoes</strong>
-                    <span>Consulta operacional com filtros por status e perigo.</span>
-                </button>
-                <button type="button" class="preset-card" data-preset="createMissao">
-                    <strong>Nova missao</strong>
-                    <span>Prepara um request de criacao de missao.</span>
-                </button>
-                <button type="button" class="preset-card" data-preset="addParticipacao">
-                    <strong>Adicionar participacao</strong>
-                    <span>Acopla um aventureiro a uma missao existente.</span>
-                </button>
-                <button type="button" class="preset-card" data-preset="ranking">
-                    <strong>Ranking de aventureiros</strong>
-                    <span>Explora o relatorio agregado com periodo e status de missao.</span>
-                </button>
-                <button type="button" class="preset-card" data-preset="metricasMissoes">
-                    <strong>Metricas de missoes</strong>
-                    <span>Resume participantes e recompensas por missao em um periodo.</span>
-                </button>
+            <div class="auth-grid">
+                <label class="field" data-field="authUsername">
+                    <span>Usuario</span>
+                    <input id="authUsername" value="" placeholder="operador">
+                </label>
+                <label class="field" data-field="authPassword">
+                    <span>Senha</span>
+                    <input id="authPassword" type="password" value="" placeholder="GuildaOperador@123">
+                </label>
+            </div>
+
+            <label class="checkbox-line">
+                <input id="authEnabled" type="checkbox">
+                <span>Enviar credenciais na chamada atual</span>
+            </label>
+
+            <div class="toolbar compact">
+                <button type="button" class="action-button primary" id="authOperatorButton">Preencher operador</button>
+                <button type="button" class="action-button" id="authAdminButton">Preencher admin</button>
+                <button type="button" class="action-button ghost" id="authClearButton">Limpar acesso</button>
+            </div>
+
+            <div class="mini-stats">
+                <div class="mini-stat">
+                    <span>Acoes mapeadas</span>
+                    <strong id="coverageCountLabel">--</strong>
+                </div>
+                <div class="mini-stat">
+                    <span>Frentes da guilda</span>
+                    <strong id="groupCountLabel">--</strong>
+                </div>
+                <div class="mini-stat">
+                    <span>Historico local</span>
+                    <strong id="historyCountLabel">0</strong>
+                </div>
             </div>
         </article>
 
-        <article class="card context">
+        <article class="card overview-panel">
             <div class="section-head">
                 <div>
-                    <p class="section-kicker">Contexto</p>
-                    <h2>Parametros da exploracao</h2>
+                    <p class="section-kicker">Cobertura</p>
+                    <h2>O que a interface contempla</h2>
                 </div>
-                <p class="panel-note">Os presets usam estes valores para montar a URL e o corpo JSON.</p>
+                <p class="panel-note" id="presetHint">Status basico para validar a API e abrir a exploracao.</p>
             </div>
 
-            <div class="form-grid">
-                <label class="field">
-                    <span>organizacaoId</span>
-                    <input id="organizacaoId" type="number" min="1" value="1">
-                </label>
-                <label class="field">
-                    <span>recursoId</span>
-                    <input id="recursoId" type="number" min="1" value="1">
-                </label>
-                <label class="field">
-                    <span>aventureiroId</span>
-                    <input id="aventureiroId" type="number" min="1" value="1">
-                </label>
-                <label class="field">
-                    <span>nome</span>
-                    <input id="nome" value="art">
-                </label>
-                <label class="field">
-                    <span>classe</span>
-                    <input id="classe" value="GUERREIRO">
-                </label>
-                <label class="field">
-                    <span>ativo</span>
-                    <select id="ativo">
-                        <option value="">qualquer</option>
-                        <option value="true">true</option>
-                        <option value="false">false</option>
-                    </select>
-                </label>
-                <label class="field">
-                    <span>nivelMinimo</span>
-                    <input id="nivelMinimo" type="number" min="1" value="1">
-                </label>
-                <label class="field">
-                    <span>statusMissao</span>
-                    <input id="statusMissao" value="PLANEJADA">
-                </label>
-                <label class="field">
-                    <span>nivelPerigo</span>
-                    <input id="nivelPerigo" value="MEDIO">
-                </label>
-                <label class="field">
-                    <span>inicio ISO</span>
-                    <input id="inicio" placeholder="2026-03-30T10:00:00-03:00">
-                </label>
-                <label class="field">
-                    <span>fim ISO</span>
-                    <input id="fim" placeholder="2026-03-31T18:00:00-03:00">
-                </label>
-                <label class="field">
-                    <span>page / size</span>
-                    <input id="pageSize" value="0,10">
-                </label>
-            </div>
-
-            <div class="hint-list">
-                <p>Classes: GUERREIRO, MAGO, ARQUEIRO, CLERIGO, LADINO</p>
-                <p>Perigo: BAIXO, MEDIO, ALTO, EPICO</p>
-                <p>Status de missao: PLANEJADA, EM_ANDAMENTO, CONCLUIDA, CANCELADA</p>
+            <div class="legend-grid">
+                <div class="legend-card">
+                    <strong>Publico</strong>
+                    <span>`/status`, `/actuator/health`, `/actuator/info` e a propria interface.</span>
+                </div>
+                <div class="legend-card">
+                    <strong>Operacional</strong>
+                    <span>Aventureiros, missoes, relatorios, painel tatico, marketplace e historico de buscas.</span>
+                </div>
+                <div class="legend-card">
+                    <strong>Administrativo</strong>
+                    <span>Audit legado, diagnosticos de persistencia e ajuste de configuracao em runtime.</span>
+                </div>
+                <div class="legend-card">
+                    <strong>Infra da guilda</strong>
+                    <span>PostgreSQL, Redis, MongoDB e Elasticsearch refletidos nas rotas do backend.</span>
+                </div>
             </div>
         </article>
 
-        <article class="card composer">
+        <article class="card route-panel">
             <div class="section-head">
                 <div>
                     <p class="section-kicker">Composer</p>
-                    <h2>Request montado na hora</h2>
+                    <h2>Preview executavel</h2>
                 </div>
-                <p class="preset-hint" id="presetHint">Status basico para validar a API antes de testar fluxos mais complexos.</p>
+                <p class="panel-note">O mesmo request final pode ser disparado pela pagina ou copiado como curl.</p>
             </div>
 
-            <div class="request-grid">
-                <label class="field">
-                    <span>metodo</span>
-                    <select id="methodInput">
-                        <option>GET</option>
-                        <option>POST</option>
-                        <option>PUT</option>
-                        <option>PATCH</option>
-                        <option>DELETE</option>
-                    </select>
-                </label>
-                <label class="field">
-                    <span>rota</span>
-                    <input id="pathInput" value="/status">
-                </label>
-            </div>
-
-            <label class="field-full">
-                <span>corpo JSON</span>
-                <textarea id="bodyInput" placeholder="Este preset nao precisa de corpo."></textarea>
-            </label>
-
-            <div class="toolbar">
-                <button type="button" class="action-button" id="previewButton">Atualizar preview</button>
-                <button type="button" class="action-button primary" id="executeButton">Executar chamada</button>
-                <button type="button" class="action-button" id="regenerateButton">Recarregar JSON</button>
-                <button type="button" class="action-button" id="clearButton">Limpar corpo</button>
-            </div>
-
-            <div class="preview-box">
-                <span class="preview-label">request final</span>
-                <code id="requestPreview">GET /status</code>
-            </div>
-        </article>
-
-        <article class="card response">
-            <div class="section-head">
-                <div>
-                    <p class="section-kicker">Radar</p>
-                    <h2>Leitura da resposta</h2>
+            <div class="route-kpis">
+                <div class="route-kpi">
+                    <span>Modulo ativo</span>
+                    <strong id="activeModuleLabel">Plataforma</strong>
                 </div>
-                <p class="panel-note">Status, tempo, tipo de retorno e o payload completo.</p>
-            </div>
-
-            <div class="response-meta">
-                <div class="meta-chip" id="metaStatus">status --</div>
-                <div class="meta-chip" id="metaTime">tempo --</div>
-                <div class="meta-chip" id="metaType">tipo --</div>
-                <div class="meta-chip" id="metaTotal">total --</div>
-            </div>
-
-            <pre id="output">Escolha um cenario ou rode o status da API para iniciar.</pre>
-        </article>
-
-        <article class="card history">
-            <div class="section-head">
-                <div>
-                    <p class="section-kicker">Historico</p>
-                    <h2>Chamadas recentes</h2>
+                <div class="route-kpi">
+                    <span>Metodo</span>
+                    <strong id="activeMethodLabel">GET</strong>
                 </div>
-                <p class="panel-note">Cada item reaplica o mesmo request.</p>
+                <div class="route-kpi">
+                    <span>Historico de respostas</span>
+                    <strong id="responseModeLabel">JSON</strong>
+                </div>
             </div>
 
-            <div id="historyList" class="history-list">
-                <p class="history-empty">Nenhuma chamada executada ainda.</p>
+            <div class="preview-box secondary">
+                <span class="preview-label">curl atual</span>
+                <code id="curlPreview">curl.exe "http://localhost:8080/status"</code>
             </div>
         </article>
     </section>
-</main>
 
-<script>
-    const elements = {
-        activePresetLabel: document.getElementById("activePresetLabel"),
-        lastStatusLabel: document.getElementById("lastStatusLabel"),
-        clockLabel: document.getElementById("clockLabel"),
-        presetHint: document.getElementById("presetHint"),
-        methodInput: document.getElementById("methodInput"),
-        pathInput: document.getElementById("pathInput"),
-        bodyInput: document.getElementById("bodyInput"),
-        requestPreview: document.getElementById("requestPreview"),
-        output: document.getElementById("output"),
-        historyList: document.getElementById("historyList"),
-        metaStatus: document.getElementById("metaStatus"),
-        metaTime: document.getElementById("metaTime"),
-        metaType: document.getElementById("metaType"),
-        metaTotal: document.getElementById("metaTotal")
-    };
-
-    const fieldIds = [
-        "organizacaoId",
-        "recursoId",
-        "aventureiroId",
-        "nome",
-        "classe",
-        "ativo",
-        "nivelMinimo",
-        "statusMissao",
-        "nivelPerigo",
-        "inicio",
-        "fim",
-        "pageSize"
-    ];
-
-    const fields = Object.fromEntries(fieldIds.map((id) => [id, document.getElementById(id)]));
-    const historyState = [];
-    let currentPreset = "status";
-
-    const presets = {
-        freeMode: {
-            label: "Modo livre",
-            method: "GET",
-            path: "/status",
-            hint: "Request recuperado do historico. Edite rota, metodo ou corpo livremente.",
-            query: () => ({})
-        },
-        status: {
-            label: "Status da API",
-            method: "GET",
-            path: "/status",
-            hint: "Verificacao rapida da aplicacao e das rotas principais.",
-            query: () => ({})
-        },
-        auditUsers: {
-            label: "Usuarios com roles",
-            method: "GET",
-            path: "/audit/usuarios",
-            hint: "Le a camada legada por organizacao e devolve os usuarios com seus papeis.",
-            query: (ctx) => ({ organizacaoId: ctx.organizacaoId })
-        },
-        auditRoles: {
-            label: "Roles com permissions",
-            method: "GET",
-            path: "/audit/roles",
-            hint: "Consulta os papeis disponiveis e suas permissoes associadas.",
-            query: (ctx) => ({ organizacaoId: ctx.organizacaoId })
-        },
-        createUser: {
-            label: "Novo usuario",
-            method: "POST",
-            path: "/audit/usuarios",
-            hint: "Use roleIds existentes do banco legado antes de enviar o POST real.",
-            query: () => ({}),
-            body: (ctx) => ({
-                organizacaoId: asNumber(ctx.organizacaoId, 1),
-                nome: "Lyra Navegante",
-                email: "lyra.navegante@guilda.local",
-                senhaHash: "hash-demo-2026",
-                status: "ATIVO",
-                roleIds: [1]
-            })
-        },
-        listAventureiros: {
-            label: "Listar aventureiros",
-            method: "GET",
-            path: "/aventureiros",
-            hint: "Aplica filtros do dominio aventura e pagina em blocos configuraveis.",
-            query: (ctx) => ({
-                organizacaoId: ctx.organizacaoId,
-                classe: ctx.classe,
-                ativo: ctx.ativo,
-                nivelMinimo: ctx.nivelMinimo,
-                page: paging(ctx).page,
-                size: paging(ctx).size,
-                sortBy: "nome",
-                direction: "asc"
-            })
-        },
-        searchAventureiros: {
-            label: "Busca por nome",
-            method: "GET",
-            path: "/aventureiros/busca",
-            hint: "Busca textual parcial retornando apenas dados essenciais para identificacao.",
-            query: (ctx) => ({
-                organizacaoId: ctx.organizacaoId,
-                nome: ctx.nome,
-                page: paging(ctx).page,
-                size: paging(ctx).size,
-                sortBy: "nome",
-                direction: "asc"
-            })
-        },
-        createAventureiro: {
-            label: "Novo aventureiro",
-            method: "POST",
-            path: "/aventureiros",
-            hint: "Payload base do dominio aventura ligado a organizacao e usuario de cadastro.",
-            query: () => ({}),
-            body: (ctx) => ({
-                organizacaoId: asNumber(ctx.organizacaoId, 1),
-                usuarioCadastroId: 1,
-                nome: "Kael do Norte",
-                classe: ctx.classe || "GUERREIRO",
-                nivel: asNumber(ctx.nivelMinimo, 5)
-            })
-        },
-        upsertCompanheiro: {
-            label: "Vincular companheiro",
-            method: "PUT",
-            path: "/aventureiros/:id/companheiro",
-            hint: "Associa ou substitui o companheiro do aventureiro apontado em recursoId.",
-            query: (ctx) => ({ organizacaoId: ctx.organizacaoId }),
-            body: () => ({
-                nome: "Asha",
-                especie: "CORUJA",
-                lealdade: 88
-            })
-        },
-        listMissoes: {
-            label: "Listar missoes",
-            method: "GET",
-            path: "/missoes",
-            hint: "Consulta operacional com filtros de status, perigo e intervalo de datas.",
-            query: (ctx) => ({
-                organizacaoId: ctx.organizacaoId,
-                status: ctx.statusMissao,
-                nivelPerigo: ctx.nivelPerigo,
-                dataDe: ctx.inicio,
-                dataAte: ctx.fim,
-                page: paging(ctx).page,
-                size: paging(ctx).size,
-                sortBy: "createdAt",
-                direction: "desc"
-            })
-        },
-        createMissao: {
-            label: "Nova missao",
-            method: "POST",
-            path: "/missoes",
-            hint: "Modelo para cadastrar uma missao dentro da organizacao corrente.",
-            query: () => ({}),
-            body: (ctx) => ({
-                organizacaoId: asNumber(ctx.organizacaoId, 1),
-                titulo: "Patrulha do Vale Nebuloso",
-                nivelPerigo: ctx.nivelPerigo || "MEDIO",
-                status: ctx.statusMissao || "PLANEJADA",
-                dataInicio: null,
-                dataTermino: null
-            })
-        },
-        addParticipacao: {
-            label: "Adicionar participacao",
-            method: "POST",
-            path: "/missoes/:id/participacoes",
-            hint: "Usa recursoId como missao e aventureiroId como participante a ser vinculado.",
-            query: (ctx) => ({ organizacaoId: ctx.organizacaoId }),
-            body: (ctx) => ({
-                aventureiroId: asNumber(ctx.aventureiroId, 1),
-                papelNaMissao: "LIDER",
-                recompensaOuro: 150,
-                destaque: true
-            })
-        },
-        ranking: {
-            label: "Ranking de aventureiros",
-            method: "GET",
-            path: "/relatorios/aventureiros/ranking",
-            hint: "Relatorio agregado com periodo opcional e filtro por status da missao.",
-            query: (ctx) => ({
-                organizacaoId: ctx.organizacaoId,
-                inicio: ctx.inicio,
-                fim: ctx.fim,
-                statusMissao: ctx.statusMissao
-            })
-        },
-        metricasMissoes: {
-            label: "Metricas de missoes",
-            method: "GET",
-            path: "/relatorios/missoes",
-            hint: "Resume missoes por periodo com totais consistentes de participantes e recompensas.",
-            query: (ctx) => ({
-                organizacaoId: ctx.organizacaoId,
-                inicio: ctx.inicio,
-                fim: ctx.fim
-            })
-        }
-    };
-
-    function asNumber(value, fallback) {
-        const parsed = Number(value);
-        return Number.isFinite(parsed) && value !== "" ? parsed : fallback;
-    }
-
-    function paging(ctx) {
-        const [page = "0", size = "10"] = (ctx.pageSize || "0,10").split(",").map((item) => item.trim());
-        return { page, size };
-    }
-
-    function collectContext() {
-        return Object.fromEntries(Object.entries(fields).map(([key, input]) => [key, input.value.trim()]));
-    }
-
-    function cleanParams(params) {
-        return Object.fromEntries(Object.entries(params).filter(([, value]) => value !== "" && value !== null && value !== undefined));
-    }
-
-    function formatJson(data) {
-        return JSON.stringify(data, null, 2);
-    }
-
-    function formatBodyValue(text) {
-        if (!text) {
-            return null;
-        }
-        try {
-            return JSON.parse(text);
-        } catch (error) {
-            return text;
-        }
-    }
-
-    function buildUrl(basePath, presetKey) {
-        const preset = presets[presetKey];
-        const ctx = collectContext();
-        const path = (basePath || preset.path).replace(/:id/g, ctx.recursoId || "1");
-        const url = new URL(path, window.location.origin);
-        Object.entries(cleanParams(preset.query(ctx))).forEach(([key, value]) => url.searchParams.set(key, value));
-        return url.pathname + url.search;
-    }
-
-    function decorateMeta(element, text, state) {
-        element.textContent = text;
-        element.className = state ? "meta-chip " + state : "meta-chip";
-    }
-
-    function syncPreview() {
-        if (elements.bodyInput.dataset.generated === "true" && presets[currentPreset].body) {
-            elements.bodyInput.value = formatJson(presets[currentPreset].body(collectContext()));
-        }
-        const url = buildUrl(elements.pathInput.value.trim() || presets[currentPreset].path, currentPreset);
-        elements.requestPreview.textContent = elements.methodInput.value + " " + url;
-    }
-
-    function applyPreset(presetKey) {
-        currentPreset = presetKey;
-        const preset = presets[presetKey];
-        document.querySelectorAll(".preset-card").forEach((card) => card.classList.toggle("active", card.dataset.preset === presetKey));
-        elements.activePresetLabel.textContent = preset.label;
-        elements.presetHint.textContent = preset.hint;
-        elements.methodInput.value = preset.method;
-        elements.pathInput.value = preset.path;
-        elements.bodyInput.value = preset.body ? formatJson(preset.body(collectContext())) : "";
-        elements.bodyInput.dataset.generated = preset.body ? "true" : "false";
-        syncPreview();
-    }
-
-    function escapeHtml(text) {
-        return String(text)
-            .replaceAll("&", "&amp;")
-            .replaceAll("<", "&lt;")
-            .replaceAll(">", "&gt;");
-    }
-
-    function renderHistory() {
-        if (!historyState.length) {
-            elements.historyList.innerHTML = '<p class="history-empty">Nenhuma chamada executada ainda.</p>';
-            return;
-        }
-
-        elements.historyList.innerHTML = historyState.map((item, index) => `
-            <div class="history-item">
-                <strong>${escapeHtml(item.method)} ${escapeHtml(item.url)}</strong>
-                <span>${escapeHtml(item.label)} | status ${escapeHtml(item.status)}</span>
-                <div class="history-actions">
-                    <button type="button" class="action-button" data-history="${index}" data-mode="load">Carregar</button>
-                    <button type="button" class="action-button primary" data-history="${index}" data-mode="run">Rodar de novo</button>
+    <section class="workspace">
+        <aside class="card catalog">
+            <div class="section-head">
+                <div>
+                    <p class="section-kicker">Catalogo</p>
+                    <h2>Todas as acoes da guilda</h2>
                 </div>
+                <p class="panel-note">Filtre, escolha uma acao e a pagina monta a chamada completa.</p>
             </div>
-        `).join("");
-    }
 
-    function pushHistory(item) {
-        historyState.unshift(item);
-        historyState.splice(8);
-        renderHistory();
-    }
+            <label class="field field-full" data-field="actionSearch">
+                <span>Buscar acao</span>
+                <input id="actionSearch" placeholder="Ex.: fuzzy, companheiro, ranking, diagnostico">
+            </label>
 
-    function loadFromHistory(item) {
-        currentPreset = "freeMode";
-        document.querySelectorAll(".preset-card").forEach((card) => card.classList.remove("active"));
-        elements.activePresetLabel.textContent = item.label;
-        elements.presetHint.textContent = presets.freeMode.hint;
-        elements.methodInput.value = item.method;
-        elements.pathInput.value = item.url;
-        elements.bodyInput.value = item.bodyText;
-        elements.bodyInput.dataset.generated = "false";
-        syncPreview();
-    }
+            <div id="catalogGroups" class="catalog-groups"></div>
+        </aside>
 
-    async function executeRequest(request) {
-        const liveRequest = request || {
-            label: presets[currentPreset].label,
-            method: elements.methodInput.value,
-            url: buildUrl(elements.pathInput.value.trim() || presets[currentPreset].path, currentPreset),
-            bodyText: elements.bodyInput.value.trim()
-        };
+        <section class="console">
+            <article class="card context-panel">
+                <div class="section-head">
+                    <div>
+                        <p class="section-kicker">Contexto</p>
+                        <h2>Parametros da operacao</h2>
+                    </div>
+                    <p class="panel-note">Campos destacados em dourado sao usados pela acao selecionada.</p>
+                </div>
 
-        const options = { method: liveRequest.method, headers: {} };
-        if (liveRequest.bodyText && !["GET", "DELETE"].includes(liveRequest.method)) {
-            options.headers["Content-Type"] = "application/json";
-            options.body = liveRequest.bodyText;
-        }
+                <div class="form-grid">
+                    <label class="field" data-field="organizacaoId">
+                        <span>organizacaoId</span>
+                        <input id="organizacaoId" type="number" min="1" value="1" data-default="1">
+                    </label>
+                    <label class="field" data-field="recursoId">
+                        <span>recursoId</span>
+                        <input id="recursoId" type="number" min="1" value="1" data-default="1">
+                    </label>
+                    <label class="field" data-field="missaoId">
+                        <span>missaoId</span>
+                        <input id="missaoId" type="number" min="1" value="1" data-default="1">
+                    </label>
+                    <label class="field" data-field="aventureiroId">
+                        <span>aventureiroId</span>
+                        <input id="aventureiroId" type="number" min="1" value="1" data-default="1">
+                    </label>
+                    <label class="field" data-field="usuarioCadastroId">
+                        <span>usuarioCadastroId</span>
+                        <input id="usuarioCadastroId" type="number" min="1" value="1" data-default="1">
+                    </label>
+                    <label class="field" data-field="roleIdsCsv">
+                        <span>roleIds CSV</span>
+                        <input id="roleIdsCsv" value="1" data-default="1">
+                    </label>
+                    <label class="field" data-field="nome">
+                        <span>nome</span>
+                        <input id="nome" value="Lyra Navegante" data-default="Lyra Navegante">
+                    </label>
+                    <label class="field" data-field="email">
+                        <span>email</span>
+                        <input id="email" value="lyra.navegante@guilda.local" data-default="lyra.navegante@guilda.local">
+                    </label>
+                    <label class="field" data-field="tituloMissao">
+                        <span>tituloMissao</span>
+                        <input id="tituloMissao" value="Patrulha do Vale Nebuloso" data-default="Patrulha do Vale Nebuloso">
+                    </label>
+                    <label class="field" data-field="termo">
+                        <span>termo</span>
+                        <input id="termo" value="espada" data-default="espada">
+                    </label>
+                    <label class="field" data-field="tipoBusca">
+                        <span>tipoBusca</span>
+                        <input id="tipoBusca" value="" data-default="">
+                    </label>
+                    <label class="field" data-field="classe">
+                        <span>classe</span>
+                        <input id="classe" value="GUERREIRO" data-default="GUERREIRO">
+                    </label>
+                    <label class="field" data-field="especie">
+                        <span>especie</span>
+                        <input id="especie" value="CORUJA" data-default="CORUJA">
+                    </label>
+                    <label class="field" data-field="ativo">
+                        <span>ativo</span>
+                        <select id="ativo" data-default="">
+                            <option value="">qualquer</option>
+                            <option value="true">true</option>
+                            <option value="false">false</option>
+                        </select>
+                    </label>
+                    <label class="field" data-field="nivel">
+                        <span>nivel</span>
+                        <input id="nivel" type="number" min="1" value="12" data-default="12">
+                    </label>
+                    <label class="field" data-field="nivelMinimo">
+                        <span>nivelMinimo</span>
+                        <input id="nivelMinimo" type="number" min="1" value="5" data-default="5">
+                    </label>
+                    <label class="field" data-field="statusMissao">
+                        <span>statusMissao</span>
+                        <input id="statusMissao" value="PLANEJADA" data-default="PLANEJADA">
+                    </label>
+                    <label class="field" data-field="statusUsuario">
+                        <span>statusUsuario</span>
+                        <input id="statusUsuario" value="ATIVO" data-default="ATIVO">
+                    </label>
+                    <label class="field" data-field="nivelPerigo">
+                        <span>nivelPerigo</span>
+                        <input id="nivelPerigo" value="MEDIO" data-default="MEDIO">
+                    </label>
+                    <label class="field" data-field="papelNaMissao">
+                        <span>papelNaMissao</span>
+                        <input id="papelNaMissao" value="LIDER" data-default="LIDER">
+                    </label>
+                    <label class="field" data-field="categoria">
+                        <span>categoria</span>
+                        <input id="categoria" value="armas" data-default="armas">
+                    </label>
+                    <label class="field" data-field="raridade">
+                        <span>raridade</span>
+                        <input id="raridade" value="raro" data-default="raro">
+                    </label>
+                    <label class="field" data-field="precoMin">
+                        <span>precoMin</span>
+                        <input id="precoMin" type="number" min="0" step="0.01" value="50" data-default="50">
+                    </label>
+                    <label class="field" data-field="precoMax">
+                        <span>precoMax</span>
+                        <input id="precoMax" type="number" min="0" step="0.01" value="700" data-default="700">
+                    </label>
+                    <label class="field" data-field="recompensaOuro">
+                        <span>recompensaOuro</span>
+                        <input id="recompensaOuro" type="number" min="0" step="0.01" value="150" data-default="150">
+                    </label>
+                    <label class="field" data-field="lealdade">
+                        <span>lealdade</span>
+                        <input id="lealdade" type="number" min="0" max="100" value="88" data-default="88">
+                    </label>
+                    <label class="field" data-field="inicio">
+                        <span>inicio ISO</span>
+                        <input id="inicio" value="" placeholder="2026-04-01T00:00:00-03:00" data-default="">
+                    </label>
+                    <label class="field" data-field="fim">
+                        <span>fim ISO</span>
+                        <input id="fim" value="" placeholder="2026-04-15T23:59:59-03:00" data-default="">
+                    </label>
+                    <label class="field" data-field="page">
+                        <span>page</span>
+                        <input id="page" type="number" min="0" value="0" data-default="0">
+                    </label>
+                    <label class="field" data-field="size">
+                        <span>size</span>
+                        <input id="size" type="number" min="1" max="50" value="10" data-default="10">
+                    </label>
+                    <label class="field" data-field="sortBy">
+                        <span>sortBy</span>
+                        <input id="sortBy" value="" data-default="">
+                    </label>
+                    <label class="field" data-field="direction">
+                        <span>direction</span>
+                        <input id="direction" value="" data-default="">
+                    </label>
+                    <label class="field" data-field="ttlRankingSegundos">
+                        <span>ttlRankingSegundos</span>
+                        <input id="ttlRankingSegundos" type="number" min="0" value="300" data-default="300">
+                    </label>
+                    <label class="field" data-field="historicoMongoHabilitado">
+                        <span>historicoMongoHabilitado</span>
+                        <select id="historicoMongoHabilitado" data-default="true">
+                            <option value="true">true</option>
+                            <option value="false">false</option>
+                        </select>
+                    </label>
+                </div>
 
-        elements.output.textContent = "Consultando " + liveRequest.url + "...";
-        decorateMeta(elements.metaStatus, "status ...", "");
-        decorateMeta(elements.metaTime, "tempo ...", "");
-        decorateMeta(elements.metaType, "tipo ...", "");
-        decorateMeta(elements.metaTotal, "total ...", "");
+                <div class="toolbar compact">
+                    <button type="button" class="action-button ghost" id="resetContextButton">Restaurar contexto</button>
+                </div>
 
-        const startedAt = performance.now();
+                <div class="hint-list">
+                    <p>Classes: GUERREIRO, MAGO, ARQUEIRO, CLERIGO, LADINO</p>
+                    <p>Perigo: BAIXO, MEDIO, ALTO, EPICO</p>
+                    <p>Status de missao: PLANEJADA, EM_ANDAMENTO, CONCLUIDA, CANCELADA</p>
+                    <p>Especies: LOBO, CORUJA, DRAGAO_MENOR, GOLEM, FENIX</p>
+                    <p>Papeis na missao: LIDER, EXPLORADOR, SUPORTE, CURANDEIRO, ATIRADOR</p>
+                </div>
+            </article>
 
-        try {
-            const response = await fetch(liveRequest.url, options);
-            const elapsed = Math.round(performance.now() - startedAt);
-            const contentType = (response.headers.get("content-type") || "sem tipo").split(";")[0];
-            const text = await response.text();
-            let parsedBody = text;
+            <article class="card composer-panel">
+                <div class="section-head">
+                    <div>
+                        <p class="section-kicker">Execucao</p>
+                        <h2>Request montado na hora</h2>
+                    </div>
+                    <p class="panel-note">Edite manualmente quando quiser fugir dos presets.</p>
+                </div>
 
-            try {
-                parsedBody = text ? JSON.parse(text) : null;
-            } catch (error) {
-                parsedBody = text;
-            }
+                <div class="request-grid">
+                    <label class="field">
+                        <span>metodo</span>
+                        <select id="methodInput">
+                            <option>GET</option>
+                            <option>POST</option>
+                            <option>PUT</option>
+                            <option>PATCH</option>
+                            <option>DELETE</option>
+                        </select>
+                    </label>
+                    <label class="field">
+                        <span>rota</span>
+                        <input id="pathInput" value="/status">
+                    </label>
+                </div>
 
-            const totalCount = response.headers.get("x-total-count") || (Array.isArray(parsedBody) ? parsedBody.length : "--");
-            const totalPages = response.headers.get("x-total-pages");
+                <label class="field field-full">
+                    <span>corpo JSON</span>
+                    <textarea id="bodyInput" placeholder="Corpo opcional em JSON."></textarea>
+                </label>
 
-            decorateMeta(elements.metaStatus, "status " + response.status, response.ok ? "ok" : "error");
-            decorateMeta(elements.metaTime, "tempo " + elapsed + " ms", "");
-            decorateMeta(elements.metaType, "tipo " + contentType, "");
-            decorateMeta(elements.metaTotal, totalPages ? "total " + totalCount + " | pags " + totalPages : "total " + totalCount, "");
-            elements.lastStatusLabel.textContent = response.status + " " + (response.ok ? "ok" : "erro");
-            elements.output.textContent = formatJson({
-                request: {
-                    method: liveRequest.method,
-                    url: liveRequest.url,
-                    body: formatBodyValue(liveRequest.bodyText)
-                },
-                response: {
-                    status: response.status,
-                    ok: response.ok,
-                    headers: {
-                        contentType,
-                        location: response.headers.get("location"),
-                        totalCount: response.headers.get("x-total-count"),
-                        totalPages: response.headers.get("x-total-pages")
-                    },
-                    body: parsedBody
-                }
-            });
+                <div class="toolbar">
+                    <button type="button" class="action-button" id="previewButton">Atualizar preview</button>
+                    <button type="button" class="action-button primary" id="executeButton">Executar chamada</button>
+                    <button type="button" class="action-button" id="regenerateButton">Regerar payload</button>
+                    <button type="button" class="action-button" id="copyCurlButton">Copiar curl</button>
+                    <button type="button" class="action-button ghost" id="clearButton">Limpar corpo</button>
+                </div>
 
-            pushHistory({
-                label: liveRequest.label,
-                method: liveRequest.method,
-                url: liveRequest.url,
-                bodyText: liveRequest.bodyText,
-                status: response.status
-            });
-        } catch (error) {
-            decorateMeta(elements.metaStatus, "status falhou", "error");
-            decorateMeta(elements.metaTime, "tempo --", "");
-            decorateMeta(elements.metaType, "tipo rede", "error");
-            decorateMeta(elements.metaTotal, "total --", "");
-            elements.lastStatusLabel.textContent = "Erro de rede";
-            elements.output.textContent = formatJson({
-                request: liveRequest,
-                error: String(error)
-            });
-        }
-    }
+                <div class="preview-box">
+                    <span class="preview-label">request final</span>
+                    <code id="requestPreview">GET /status</code>
+                </div>
+            </article>
 
-    document.querySelectorAll(".preset-card").forEach((button) => {
-        button.addEventListener("click", () => applyPreset(button.dataset.preset));
-    });
+            <article class="card response-panel">
+                <div class="section-head">
+                    <div>
+                        <p class="section-kicker">Radar</p>
+                        <h2>Leitura da resposta</h2>
+                    </div>
+                    <p class="panel-note">Status, tempo, tipo, escopo de acesso e payload completo.</p>
+                </div>
 
-    Object.values(fields).forEach((input) => input.addEventListener("input", syncPreview));
-    elements.methodInput.addEventListener("input", syncPreview);
-    elements.pathInput.addEventListener("input", syncPreview);
-    elements.bodyInput.addEventListener("input", () => {
-        elements.bodyInput.dataset.generated = "false";
-    });
+                <div class="response-meta">
+                    <div class="meta-chip" id="metaStatus">status --</div>
+                    <div class="meta-chip" id="metaTime">tempo --</div>
+                    <div class="meta-chip" id="metaType">tipo --</div>
+                    <div class="meta-chip" id="metaTotal">total --</div>
+                    <div class="meta-chip" id="metaAuth">acesso --</div>
+                </div>
 
-    document.getElementById("previewButton").addEventListener("click", syncPreview);
-    document.getElementById("executeButton").addEventListener("click", () => executeRequest());
-    document.getElementById("regenerateButton").addEventListener("click", () => {
-        if (presets[currentPreset].body) {
-            elements.bodyInput.value = formatJson(presets[currentPreset].body(collectContext()));
-            elements.bodyInput.dataset.generated = "true";
-        }
-        syncPreview();
-    });
-    document.getElementById("clearButton").addEventListener("click", () => {
-        elements.bodyInput.value = "";
-        elements.bodyInput.dataset.generated = "false";
-        syncPreview();
-    });
+                <pre id="output">Escolha uma acao no catalogo ou rode o status da API para iniciar.</pre>
+            </article>
 
-    elements.historyList.addEventListener("click", (event) => {
-        const button = event.target.closest("button[data-history]");
-        if (!button) {
-            return;
-        }
-        const item = historyState[Number(button.dataset.history)];
-        if (!item) {
-            return;
-        }
-        loadFromHistory(item);
-        if (button.dataset.mode === "run") {
-            executeRequest(item);
-        }
-    });
+            <article class="card history-panel">
+                <div class="section-head">
+                    <div>
+                        <p class="section-kicker">Historico</p>
+                        <h2>Chamadas recentes</h2>
+                    </div>
+                    <p class="panel-note">Cada item recarrega o request com o contexto atual de credenciais.</p>
+                </div>
 
-    function updateClock() {
-        elements.clockLabel.textContent = new Date().toLocaleTimeString("pt-BR");
-    }
-
-    updateClock();
-    setInterval(updateClock, 1000);
-    applyPreset("status");
-    executeRequest();
-</script>
+                <div id="historyList" class="history-list">
+                    <p class="history-empty">Nenhuma chamada executada ainda.</p>
+                </div>
+            </article>
+        </section>
+    </section>
+</main>
 </body>
 </html>

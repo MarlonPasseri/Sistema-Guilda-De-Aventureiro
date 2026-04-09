@@ -1,0 +1,62 @@
+services:
+  guilda-db:
+    image: leogloriainfnet/postgres-tp2-spring:2.0-win
+    container_name: guilda-db
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./docker/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+    command: ["postgres", "-c", "hba_file=/etc/postgresql/pg_hba.conf"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  guilda-es:
+    image: leogloriainfnet/elastic-tp2-spring:1.0-windows
+    container_name: guilda-es
+    ports:
+      - "9200:9200"
+    environment:
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+
+  guilda-redis:
+    image: redis:7
+    container_name: guilda-redis
+    ports:
+      - "6379:6379"
+
+  guilda-mongo:
+    image: mongo:7
+    container_name: guilda-mongo
+    ports:
+      - "27017:27017"
+
+  guilda-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: guilda-app
+    ports:
+      - "8080:8080"
+    environment:
+      DB_URL: jdbc:postgresql://guilda-db:5432/postgres
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      ELASTICSEARCH_URI: http://guilda-es:9200
+      REDIS_HOST: guilda-redis
+      REDIS_PORT: 6379
+      MONGODB_URI: mongodb://guilda-mongo:27017/guilda
+      GUILDA_SECURITY_ADMIN_USERNAME: estrategista
+      GUILDA_SECURITY_ADMIN_PASSWORD: GuildaAdmin@123
+      GUILDA_SECURITY_OPERADOR_USERNAME: operador
+      GUILDA_SECURITY_OPERADOR_PASSWORD: GuildaOperador@123
+    depends_on:
+      guilda-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
