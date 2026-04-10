@@ -1,171 +1,205 @@
 # Sistema de Gestao de Aventureiros
 
-Projeto Spring Boot evoluido para trabalhar com:
+Aplicacao Spring Boot para gerenciamento de aventureiros, missoes, auditoria, relatorios e servicos complementares da guilda.
 
-- schema legado `audit` ja existente no PostgreSQL
-- novo schema `aventura` criado pela aplicacao
-- consultas operacionais e relatorios do dominio de aventureiros
-- ranking tatico de missoes com cache na aplicacao
-- buscas e agregacoes no Elasticsearch para o marketplace da guilda
+O projeto integra:
+
+- PostgreSQL com o schema legado `audit`
+- schema novo `aventura`, criado pela aplicacao
+- painel tatico de missoes com cache em Redis
+- marketplace consultando o indice Elasticsearch `guilda_loja`
 - historico de buscas persistido em MongoDB
-- cache do ranking tatico persistido em Redis via `RedisTemplate`
-- diagnostico de persistencia e configuracao dinamica em tempo de execucao
+- endpoints de diagnostico e configuracao dinamica em runtime
+- interface web publica para exploracao rapida da API
 
-## O que foi implementado
+## Visao geral
 
-### Parte 1
+### Dominio principal
 
-- entidades JPA para todo o schema `audit`
-- mapeamento de `@ManyToOne`, `@OneToMany` e `@ManyToMany`
-- tabelas de juncao com chave composta:
-  - `audit.user_roles`
-  - `audit.role_permissions`
-- repositorios para organizacoes, usuarios, roles, permissions, api keys e audit entries
-- endpoints para:
-  - listar usuarios com roles
-  - listar roles com permissions
-  - criar usuario vinculado a organizacao existente
+- cadastro e consulta de aventureiros
+- associacao e remocao de companheiros
+- criacao e detalhamento de missoes
+- participacao de aventureiros em missoes
+- relatorios agregados por aventureiro e por missao
 
-### Parte 2
+### Modulos complementares
 
-- schema `aventura` criado via script idempotente
-- entidades persistentes:
-  - `Aventureiro`
-  - `Companheiro`
-  - `Missao`
-  - `ParticipacaoMissao`
-- integridade entre organizacoes, usuarios, aventureiros e missoes
-- regras de negocio principais:
-  - sem relacionamento cruzado entre organizacoes
-  - aventureiro inativo nao entra em novas missoes
-  - participacao unica por par `(missao, aventureiro)`
-  - companheiro com composicao `1:1` e remocao junto do aventureiro
-
-### Parte 3
-
-- listagem de aventureiros com filtros, ordenacao e paginacao
-- busca textual parcial por nome
-- perfil completo do aventureiro com companheiro, total de participacoes e ultima missao
-- listagem de missoes com filtros, ordenacao e paginacao
-- detalhamento de missao com participantes
-- ranking de participacao
-- relatorio de missoes com metricas agregadas
-- testes para cada busca/consulta relevante
-
-### Parte 4
-
-- endpoint `GET /missoes/top15dias`
-- leitura do painel tatico de missoes no schema `operacoes`
-- filtro de ultimos 15 dias aplicado na camada de service
-- ordenacao por `indice_prontidao` desc e limite de 10 registros
-- cache Redis com expiracao configuravel para reduzir consultas repetidas
-
-### Parte 5
-
-- integracao da aplicacao com o indice Elasticsearch `guilda_loja`
-- buscas textuais por `nome`, `descricao`, frase exata, fuzzy e multicampos
-- filtros por `categoria`, `raridade` e faixa de preco
-- agregacoes por categoria, raridade, preco medio e faixas de preco
-- historico de buscas do marketplace salvo em MongoDB via `MongoRepository`
-- consulta desse historico por endpoint REST
-
-### Parte 6
-
-- configuracao dinamica em runtime via `ConfigurableEnvironment`
-- leitura do relatorio de autoconfiguracao do Spring Boot com `ConditionEvaluationReport`
-- endpoint para inspecionar auto-configuracoes de JPA, Mongo e Redis
-- endpoint para alterar em tempo de execucao o TTL do cache Redis e o toggle do historico Mongo
+- auditoria de usuarios, roles, permissions, api keys e audit entries do schema legado
+- painel tatico com leitura da view `operacoes.vw_painel_tatico_missao`
+- cache do ranking tatico com `StringRedisTemplate`
+- buscas textuais e agregacoes no Elasticsearch
+- historico de buscas salvo em MongoDB
+- leitura de auto-configuracoes do Spring Boot e ajuste de propriedades sem reiniciar a aplicacao
 
 ## Stack
 
 - Java 17
 - Spring Boot 3.3.3
 - Spring Web
+- Spring Security
+- Spring Boot Actuator
 - Spring Data JPA
 - Spring Data Redis
 - Spring Data MongoDB
-- Spring Boot Actuator
-- Elasticsearch
+- Spring Data Elasticsearch
 - PostgreSQL
+- Redis
+- MongoDB
+- Elasticsearch
 - Maven
+- Docker / Docker Compose
 
-## Banco da avaliacao
+## Arquitetura resumida
 
-Imagem utilizada:
+### Persistencia relacional
 
-- `leogloriainfnet/postgres-tp2-spring:2.0-win`
-- `leogloriainfnet/elastic-tp2-spring:1.0-windows`
+- `audit`: schema legado apenas mapeado
+- `aventura`: schema criado via `src/main/resources/db/schema-aventura.sql`
 
-Observacao importante:
+Entidades principais:
 
-- o usuario `appuser` criado pela imagem nao possui privilegio `REFERENCES` suficiente para criar as FKs do schema `aventura`
-- por isso a aplicacao esta configurada por padrao para subir com `postgres/postgres`
-- se quiser usar outras credenciais, basta sobrescrever `DB_URL`, `DB_USERNAME` e `DB_PASSWORD`
-- na imagem `2.0-win`, o objeto existente no schema `operacoes` veio como `vw_painel_tatico_missao`; o mapeamento foi alinhado a esse objeto real da imagem para manter a aplicacao funcional no ambiente fornecido
+- `Aventureiro`
+- `Companheiro`
+- `Missao`
+- `ParticipacaoMissao`
+
+Regras de negocio principais:
+
+- sem relacionamento cruzado entre organizacoes
+- aventureiro inativo nao participa de novas missoes
+- participacao unica por par `(missao, aventureiro)`
+- companheiro em composicao `1:1` com o aventureiro
+- missoes aceitam participantes apenas em estados validos
+
+### Persistencia complementar
+
+- Redis: cache do endpoint `GET /missoes/top15dias`
+- MongoDB: colecao `historico_buscas_marketplace`
+- Elasticsearch: consultas e agregacoes sobre o indice `guilda_loja`
+
+## Seguranca
+
+A aplicacao usa `HTTP Basic` com dois perfis padrao.
+
+| Perfil | Usuario | Senha | Acesso |
+| --- | --- | --- | --- |
+| Admin | `estrategista` | `GuildaAdmin@123` | rotas administrativas e operacionais |
+| Operador | `operador` | `GuildaOperador@123` | rotas operacionais |
+
+### Rotas publicas
+
+- `/`
+- `/index.html`
+- `/status`
+- `/actuator/health`
+- `/actuator/info`
+
+### Rotas administrativas
+
+- `/audit/**`
+- `/diagnosticos/**`
+- `/actuator/**`
+
+### Rotas operacionais
+
+- `/aventureiros/**`
+- `/missoes/**`
+- `/relatorios/**`
+- `/produtos/**`
 
 ## Como executar
 
-### 1. Subir o PostgreSQL legado
+### Opcao recomendada: infra via Docker Compose + app via Maven
+
+Subir a infra:
 
 ```bash
-docker run -d --name guilda-tp2-db -e POSTGRES_PASSWORD=postgres -p 5432:5432 leogloriainfnet/postgres-tp2-spring:2.0-win
+docker compose up -d guilda-db guilda-es guilda-redis guilda-mongo
 ```
 
-### 2. Subir o Elasticsearch
-
-```bash
-docker run -d --name guilda-es -p 9200:9200 -e ES_JAVA_OPTS="-Xms512m -Xmx512m" leogloriainfnet/elastic-tp2-spring:1.0-windows
-```
-
-### 3. Subir o Redis
-
-```bash
-docker run -d --name guilda-redis -p 6379:6379 redis:7
-```
-
-### 4. Subir o MongoDB
-
-```bash
-docker run -d --name guilda-mongo -p 27017:27017 mongo:7
-```
-
-### 5. Rodar a aplicacao
+Rodar a aplicacao:
 
 ```bash
 mvn spring-boot:run
 ```
 
-API disponivel em:
+Aplicacao disponivel em:
 
 - `http://localhost:8080/`
 - `http://localhost:8080/status`
-- `http://localhost:8080/actuator/conditions`
-- `http://localhost:8080/actuator/env`
+- `http://localhost:8080/actuator/health`
+- `http://localhost:8080/actuator/info`
 
-### 6. Rodar os testes
+### Opcao alternativa: stack completa em Docker
 
 ```bash
-mvn test
+docker compose up -d --build
 ```
+
+Essa opcao sobe a aplicacao no servico `guilda-app` junto com os servicos auxiliares.
+
+### Parar os servicos
+
+```bash
+docker compose down
+```
+
+## Servicos da stack local
+
+O arquivo [docker-compose.yml](docker-compose.yml) ja traz os containers usados no projeto:
+
+- PostgreSQL: `guilda-db`
+- Elasticsearch: `guilda-es`
+- Redis: `guilda-redis`
+- MongoDB: `guilda-mongo`
+- aplicacao Spring Boot: `guilda-app`
+
+Imagens principais:
+
+- `leogloriainfnet/postgres-tp2-spring:2.0-win`
+- `leogloriainfnet/elastic-tp2-spring:1.0-windows`
+- `redis:7`
+- `mongo:7`
 
 ## Configuracao
 
-Os valores padrao estao em `src/main/resources/application.properties`:
+Os valores padrao ficam em [application.properties](src/main/resources/application.properties).
+
+Principais propriedades:
 
 ```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/postgres
-spring.datasource.username=postgres
-spring.datasource.password=postgres
-spring.jpa.hibernate.ddl-auto=validate
-spring.sql.init.mode=always
-spring.sql.init.schema-locations=classpath:db/schema-aventura.sql
-spring.elasticsearch.uris=http://localhost:9200
-spring.data.redis.host=localhost
-spring.data.redis.port=6379
-spring.data.mongodb.uri=mongodb://localhost:27017/guilda
-guilda.cache.ranking.ttl-segundos=300
-guilda.marketplace.historico.mongo.habilitado=true
+spring.datasource.url=${DB_URL:jdbc:postgresql://localhost:5432/postgres}
+spring.datasource.username=${DB_USERNAME:postgres}
+spring.datasource.password=${DB_PASSWORD:postgres}
+spring.elasticsearch.uris=${ELASTICSEARCH_URI:http://localhost:9200}
+spring.data.redis.host=${REDIS_HOST:localhost}
+spring.data.redis.port=${REDIS_PORT:6379}
+spring.data.mongodb.uri=${MONGODB_URI:mongodb://localhost:27017/guilda}
+guilda.cache.ranking.ttl-segundos=${GUILDA_CACHE_RANKING_TTL_SEGUNDOS:300}
+guilda.marketplace.historico.mongo.habilitado=${GUILDA_MARKETPLACE_HISTORICO_MONGO_HABILITADO:true}
+guilda.security.admin.username=${GUILDA_SECURITY_ADMIN_USERNAME:estrategista}
+guilda.security.admin.password=${GUILDA_SECURITY_ADMIN_PASSWORD:GuildaAdmin@123}
+guilda.security.operador.username=${GUILDA_SECURITY_OPERADOR_USERNAME:operador}
+guilda.security.operador.password=${GUILDA_SECURITY_OPERADOR_PASSWORD:GuildaOperador@123}
 ```
+
+### Observacoes importantes sobre o banco
+
+- o usuario `appuser` da imagem da avaliacao nao possui privilegio `REFERENCES` suficiente para criar as FKs do schema `aventura`
+- por isso a aplicacao usa `postgres/postgres` por padrao
+- o schema `aventura` e inicializado por script idempotente
+- a view usada pelo painel tatico foi alinhada ao objeto real presente na imagem `2.0-win`
+
+## Interface web
+
+A pagina inicial em `http://localhost:8080/` funciona como painel publico para explorar os endpoints.
+
+Ela permite:
+
+- alternar entre requests publicos, operacionais e administrativos
+- preencher credenciais de operador e admin
+- testar os endpoints principais sem precisar montar as URLs manualmente
+- visualizar exemplos de payloads e respostas
 
 ## Endpoints principais
 
@@ -195,15 +229,12 @@ guilda.marketplace.historico.mongo.habilitado=true
 - `GET /missoes?organizacaoId=1&status=CONCLUIDA&nivelPerigo=ALTO&page=0&size=10`
 - `GET /missoes/{id}?organizacaoId=1`
 - `POST /missoes/{id}/participacoes?organizacaoId=1`
+- `GET /missoes/top15dias`
 
 ### Relatorios
 
 - `GET /relatorios/aventureiros/ranking?organizacaoId=1`
 - `GET /relatorios/missoes?organizacaoId=1`
-
-### Painel Tatico
-
-- `GET /missoes/top15dias`
 
 ### Marketplace
 
@@ -227,25 +258,28 @@ guilda.marketplace.historico.mongo.habilitado=true
 - `GET /diagnosticos/configuracoes`
 - `PATCH /diagnosticos/configuracoes?ttlRankingSegundos=120&historicoMongoHabilitado=false`
 
-## Estrutura resumida
+## Visualizacao do Elasticsearch
 
-```text
-src/main/java/br/com/guilda/registro
-  |- audit/domain
-  |- audit/repository
-  |- controller
-  |- domain
-  |- dto
-  |- exception
-  |- repository
-  |- service
-  |- validation
-src/main/resources/db/schema-aventura.sql
-src/test/java/br/com/guilda/registro
+O Elasticsearch fica exposto na porta `9200`.
+
+Consultas uteis:
+
+- cluster: `http://localhost:9200`
+- indices: `http://localhost:9200/_cat/indices?v`
+- mapping do indice: `http://localhost:9200/guilda_loja/_mapping?pretty`
+- busca simples: `http://localhost:9200/guilda_loja/_search?pretty`
+
+## Testes
+
+Executar a suite:
+
+```bash
+mvn test
 ```
 
-## Testes implementados
+Principais classes de teste:
 
+- `ApplicationSecurityIntegrationTest`
 - `AuditMappingRepositoryTest`
 - `AventureiroQueryServiceTest`
 - `MissaoRelatorioServiceTest`
@@ -254,47 +288,75 @@ src/test/java/br/com/guilda/registro
 - `HistoricoBuscaProdutoServiceTest`
 - `ConfiguracaoDinamicaServiceTest`
 
-Cobertura validada com:
+Cobertura validada em:
 
-- carga de usuario com roles
-- carga de role com permissions
-- persistencia de novo usuario em organizacao existente
-- filtros de aventureiros
-- busca parcial por nome
-- perfil completo do aventureiro
-- filtros de missao
-- detalhamento de missao
-- ranking de participacao
-- relatorio de missoes com metricas
-- calculo da janela dos ultimos 15 dias
-- reaproveitamento do cache Redis do ranking tatico
-- persistencia do historico de buscas em MongoDB
-- atualizacao dinamica das propriedades de runtime
+- seguranca e autorizacao por perfil
+- mapeamentos do schema `audit`
+- filtros e consultas de aventureiros
+- regras e consultas de missoes
+- ranking de participacao e metricas agregadas
+- cache Redis do painel tatico
+- historico Mongo do marketplace
+- configuracao dinamica em runtime
 
-## Estrategia de cache e persistencia complementar
+### Observacao sobre os testes JPA
 
-Foi aplicada uma estrategia de cache em Redis na camada de service do ranking tatico:
+Os testes `@DataJpaTest` usam o PostgreSQL local do ambiente de execucao. Por isso, antes de rodar `mvn test`, o servico `guilda-db` precisa estar disponivel.
 
-- uso explicito de `StringRedisTemplate`
-- chave `missoes:top15dias`
-- TTL controlado pela propriedade `guilda.cache.ranking.ttl-segundos`
-- objetivo: reduzir repeticao da consulta pesada sobre o painel tatico sem perder atualizacao recente dos dados
+## Estrutura do projeto
 
-Historico NoSQL:
+```text
+src/main/java/br/com/guilda/registro
+  |- audit/
+  |  |- domain/
+  |  |- repository/
+  |- config/
+  |- controller/
+  |- domain/
+  |- dto/
+  |- exception/
+  |- mongodb/
+  |  |- domain/
+  |  |- repository/
+  |- repository/
+  |- service/
+  |- validation/
+src/main/resources
+  |- db/schema-aventura.sql
+  |- static/index.html
+  |- static/app.js
+src/test/java/br/com/guilda/registro
+docs/
+docker-compose.yml
+Dockerfile
+```
 
-- uso de `MongoRepository` para a colecao `historico_buscas_marketplace`
-- registro das consultas executadas no marketplace
-- endpoint proprio para consulta do historico salvo
+## Documentacao complementar
 
-Configuracao dinamica:
+Arquivos incluidos no repositorio:
 
-- alteracao das propriedades em runtime via `ConfigurableEnvironment`
-- diagnostico das auto-configuracoes com `ConditionEvaluationReport`
-- suporte para ajustar TTL do cache e habilitar/desabilitar historico Mongo sem reiniciar a aplicacao
+- [analise-requisitos.md](docs/analise-requisitos.md)
+- [relatorio-rubricas.md](docs/relatorio-rubricas.md)
 
-## Documento de analise
+## Problemas comuns
 
-Foi adicionado:
+### Porta 8080 ocupada
 
-- `docs/analise-requisitos.md`
+Se ja existir outra instancia da aplicacao em execucao:
 
+```bash
+mvn spring-boot:run "-Dspring-boot.run.arguments=--server.port=8081"
+```
+
+### Falha de autenticacao no PostgreSQL
+
+Se a senha do container nao bater com a esperada, normalmente ha um volume antigo reaproveitado. Nessa situacao, recriar a infra com volumes novos costuma resolver:
+
+```bash
+docker compose down -v
+docker compose up -d guilda-db guilda-es guilda-redis guilda-mongo
+```
+
+### JSON no PowerShell com `curl.exe`
+
+No Windows, requisicoes `POST`, `PUT` e `PATCH` com JSON inline podem ser mais simples no Insomnia ou Postman. Se for usar `curl.exe`, uma alternativa segura e enviar o body a partir de arquivo com `--data-binary @arquivo.json`.
